@@ -1,5 +1,0 @@
-Progress report:
-1. Auto-stabalized hovor is working great!
-2. PID needs more tuning to get working smoothly.
-3. The main issue that needs to be solved is the problem with the communications module and its nasty habit of reporting horrendously
-    large PWM readings from the RC remote controller.
