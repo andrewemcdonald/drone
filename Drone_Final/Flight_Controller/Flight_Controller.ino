@@ -111,7 +111,8 @@ void loop()
   powerHiCut();                 //Sets any motor power value(s) above maxPower to maxPower
   updateMotorPower();           //Sends new motor power values to the ESCs
   
-  //For debugging
+  //---------For debugging----------
+  /*
   if (printTimer == 100)
   {  
       printPowerToSerial();
@@ -120,8 +121,9 @@ void loop()
       printTimer = -1;
   }
   printTimer++;
-  
+  */
   //printExecutionTime();         //Prints the time it took to complete an iteration of the loop
+  //--------------------------------
 }
 
 void doPID()
