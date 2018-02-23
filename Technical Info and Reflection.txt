@@ -1,0 +1,97 @@
+Overview:
+
+I spent the past semester learning the about C, embedded microsystems, circuitry, and the Arduino platform. 
+I worked on building a drone and programming an Arduino-based flight controller which is functional, but not quite yet capable of high-performance flight.
+This project involved learning about and working with both software and hardware, both of which are outlined in this reflection. 
+
+Hardware:
+
+Circuits: I reviewed elementary circuit rules from AP Physics 1, including Ohm’s Law, parallel and series circuits, and power consumption. 
+I also learned how to make voltage dividers with a couple resistors and some jumper wires. A voltage divider is a circuit with two resisters
+in series with an extra wire in between. Because the voltage drop across a resistor is proportional to the amount of resistance that resistor
+contributes to the total resistance of a circuit, changing the resistance of a resister in series can change the amount of voltage in between
+the two resistors. Thus, the amount of voltage across the entire circuit can been “divided” between the two channels (the wire in between the
+resistors and the original circuit with both resistors) that the charge can flow through. I also learned how to read data from a sensor (which
+is just a variable resistor) using a voltage divider and an analog pin on the Arduino. This was important when building the remote control for the drone.
+
+Soldering/Sautering: During my first attempt to solder a resistor to a prototype board, I was so clueless that I completely busted the tip of
+the iron: it turns out that if an iron tip is heated and left to oxidize for a couple minutes, it no longer effectively conducts heat. In 
+addition to learning how to properly use and maintain a soldering iron, I learned some soldering techniques, including surface mounting, 
+which I used to attach the ESCs onto the drone’s chassis, joining wires, which I needed to attach the motors to the ESCs, and soldering 
+components to a breadboard.
+
+Servos and Pulse-Width Modulation (PWM): Servos are small motors that are designed to move to and hold a designated position. They are controlled 
+using what is called Pulse-Width Modulation. Essentially, a microcontroller using PWM sends a new signal to the desired component every 2 milliseconds, 
+the duration of which dictates the position/amount of power that the component should achieve/draw. The longest possible duration of a pulse is 
+2ms, which is called a “100% duty cycle” because the connection between the controller and component is “logic high” 100% percent of the time. 
+Likewise, a continuous 1ms long pulse would be called a “50% duty cycle” because the connection has some potential difference across it 50% percent 
+of the time. The smallest pulse is a 0% duty cycle, or no pulse at all. The drone’s electronic speed controllers, which drive the motors, also run 
+on a PWM connection. I used the Arduino PWM library called <Servo.h> to control the drone’s motors.
+
+I2C and STI Communications Protocols: The motion processing unit and NRF24 radio were the most complicated components on the drone and required 
+more sophisticated methods to communicate with the microcontroller: I2C and STI.
+
+I2C (short for Inter-Integrated Circuit) works by connecting each component to two wires called the “clock” and “data” lines. Each component 
+is predetermined to play the role of either “master”, or “slave”. The job of the master is to send commands to the “slaves” on the network. 
+The “slaves” are each assigned an 8-bit address which the master can use to signal that it wants to communicate with a certain slave. To start 
+a communication, the master begins by pulling the clock resistor to “logic low” and then regularly iterating between the clock line between 
+states of “logic high” and “logic low”. When the clock line is “logic high”, the slaves sample the “data” line to see if it is logic high or 
+low, representing a bit of information. The first eight bits represent the address of the component that the master wants to interact with. 
+The bit after that is called the acknowledge bit, which is sent by the slave to the master to verify that it received its address. The 
+communication then continues in the same maner with the master/slave sending data while the master continues to regularly alternate the 
+“clock” between “logic high” and “logic low” until all the desired information has been transferred. This protocol is great because it 
+can connect several components with only two wires, however it is comparatively slow to other protocols which use several wires for each 
+component. I used this protocol to pull live data from the MPU 6050
+
+SPI (short for Serial Peripheral Interface) works by connecting two components three wires called “clock”, “MOSI” (Master In Slave Out), 
+and “MISO” (Master In Slave Out). One component is determined to be the master, which is responsible from running the “clock” line and 
+requesting data from the “slave” component. Unlike in I2C, the master is only connected to a single other component, so it doesn’t have 
+to worry about sending an 8-bit address. Instead, it can send a request for information from the slave component on the “MOSI” line. 
+Once it has requested the information, the slave component sends the information along the “MISO” line. Because it uses three lines 
+per component, SPI is much less wire-efficient than I2C. However, those additional lines get rid of the necessity to send an address 
+before each communication and allow for simultaneous data requests and transfers with any number of “slave” components, making SPI a 
+much faster communications protocol.
+
+Software: The drone flight controller went through three major phases of development: calculating orientation, communicating with the remote over radio, 
+and implementing PID.
+
+Calculating Orientation: This ended up being the most significant challenge of the project. The first problem was to pull data from the 
+motion processor unit (or MPU for short). The MPU came with 100+ page manual and register map explaining how to communicate with the device. I 
+first learned the Arduino <Wire.h> library, which is used for I2C communication. After that I found a useful video online that explained how to 
+start getting data from the MPU which can be found here: https://www.youtube.com/watch?v=M9lZ5Qy5S2s. To get data from the MPU, I had to turn 
+off “sleep mode” on the device by changing a single bit on the “Power Management I” byte. I also manually set the full-scale ranges of the 
+accelerometer and gyroscope. Once everything was setup, I had to start a new communication and request six bytes of data starting from the 
+“Accelerometer Data I” byte. Since the MPU sends bytes from consecutive addresses and the data addresses of the accelerometer, thermometer, 
+and gyroscope right next to each-other, this request got me data from accelerometer, thermometer, and gyroscope, respectively. After that, 
+I had to use the provided data-sheet to find the coefficients necessary to convert the digital data I had received into usable numbers for 
+the controller. For the accelerometer, this meant that I needed acceleration values in meters per second per second and gyroscope values in 
+degrees per second. I also needed to convert these values into angle measurements that could represent the orientation of the MPU. This was 
+accomplished first by turning the gyroscope and accelerometer readings into degree values representing the drone’s orientation. For the 
+gyroscope, the controller continuously multiplies each gyroscope reading times the amount of time (in seconds) that had elapsed since the 
+last gyroscope reading. With the accelerometer, I considered that the way the sensor interpreted acceleration due to gravity would change 
+as the orientation of the drone changed and used trig functions to calculate its x and y-axis orientation. At this point a new problem arose: 
+the gyroscope was pretty accurate, but the integration caused reading to slowly drift from the actual value. The accelerometer had no drift 
+problem, but was extremely sensitive to any vibrations. The solution was a complimentary filter, which combines the gyroscope and accelerometer 
+values into a single reading by adding a 98% of the gyroscope value and 2% of the accelerometer value. This makes for an orientation measurement 
+that isn’t prone to jitter but has enough accelerometer value in it to stabilize the drift of the gyro.
+
+Radio Communication:
+
+With the MPU working, I moved on to the radio. In my case, that meant a NRF24LO1, a long-distance radio that has a lot of Arduino libraries to 
+support it. I started by building a program that successfully controlled an onboard LED using the serial monitor. I then built an improvised 
+radio controller using a breadboard, an Arduino Uno, a 10k potentiometer, and some zip-tie and could control the throttle of the motors by 
+sending a single integer over the radio. One issue I had was that different communication protocols have different bit orders. SPI protocol 
+sends in big-endian order, while I expected little-endian. One thing I have learned is that it is important to know what byte-order different 
+computers run on and make the code comply with it. The issue I am currently working on (I plan to continue working on this in my free time) is 
+sending several bytes of different data across the radio. The problem is that all the information I need to send (which includes several different 
+data types) needs be concatenated into a single format that can be sent byte-by-byte using SPI. Unfortunately, there is no easy was to access the 
+individual bytes of a data type, so I have the choice of messing around with data pointers or find a way to put all of the information into an array of bytes.
+	
+PID: The last part of this project involved making the actual heart of the code: a Proportion-Integral-Derivative microcontroller. PID is a two-step process
+	
+1.	Calculate the “error” of the drone. Error represents the difference between the desired orientation of the drone and the drone’s actual 
+orientation. In the case of auto-stabilization, the desired position is always (0,0,0), so the error value represents how far the drone is from 
+being perfectly level with the ground. 
+2.	Translate the error value into adjustment of the drone’s motors. Essentially, the drone adds more power to the corresponding correctional 
+motor for every unit of error that accumulates.
+
