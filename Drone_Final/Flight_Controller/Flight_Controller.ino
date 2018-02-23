@@ -11,7 +11,7 @@
  * 
  * 1. PID Tuning
  * 
- * 2. Solve the inconsistant radio
+ * 2. Solve the inconsistent radio
  * 
  * 3. Build a top cover
  * 
