@@ -1,3 +1,6 @@
+/*
+ * Referenced this website extensively: www.brokking.net
+*/
 #include <Wire.h> //Include I2C library
 #include <nRF24L01.h> //Include radio driver libraries
 #include <printf.h>
