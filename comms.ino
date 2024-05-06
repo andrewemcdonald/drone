@@ -6,7 +6,7 @@
 #include <SPI.h>
 
 // Transeiver
-const int CE = 9, const CSN = 10; //Pin locations
+const int CE = 9, const CSN = 10; // Pin locations
 const RF24 radio = RF24(CE, CSN);
 const byte address[] = "1chan"; // Communications address
 const char writeBuffer[12];
@@ -20,9 +20,9 @@ int throttleTimer, yawTimer, rollTimer, pitchTimer;
 // Other
 int throttle, yaw, pitch, roll;
 
-void setup() 
+void setup()
 {
-  //Setup communcation
+  // Setup communcation
   radio.begin();
   radio.openWritingPipe(address);
   Serial.begin(9600);
@@ -32,30 +32,30 @@ void setup()
   pinMode(receiver_pitchPin, INPUT_PULLUP);
   pinMode(receiver_rollPin, INPUT_PULLUP);
 
-  enableInterrupt(receiver_throttlePin, interrupt, CHANGE); //Roll, pitch, throttle, yaw
+  enableInterrupt(receiver_throttlePin, interrupt, CHANGE); // Roll, pitch, throttle, yaw
   enableInterrupt(receiver_yawPin, interrupt, CHANGE);
   enableInterrupt(receiver_pitchPin, interrupt, CHANGE);
   enableInterrupt(receiver_rollPin, interrupt, CHANGE);
 }
 
-void loop() 
-{  
+void loop()
+{
   sendToDrone();
-  //printControls();
+  // printControls();
 }
 
 void interrupt()
 {
   int currentTime = micros();
-  
+
   if (digitalRead(receiver_throttlePin) == 1)
   {
     // throttlePin is receiving signal and the timing mechanism hasn't been started.
     if (throttleTimer == 0)
     {
       throttleTimer = currentTime;
-    }                                          
-  } 
+    }
+  }
   else if (throttleTimer != 0)
   {
     // throttlePin is no longer receiving signal, but the timer is still running.
@@ -70,7 +70,7 @@ void interrupt()
     {
       pitchTimer = currentTime;
     }
-  } 
+  }
   else if (pitchTimer != 0)
   {
     // pitchPin is no longer receiving signal, but the timer is still running.
@@ -84,8 +84,8 @@ void interrupt()
     if (rollTimer == 0)
     {
       rollTimer = currentTime;
-    }                                          
-  } 
+    }
+  }
   else if (rollTimer != 0)
   {
     // rollPin is no longer receiving signal, but the timer is still running.
@@ -99,8 +99,8 @@ void interrupt()
     if (yawTimer == 0)
     {
       yawTimer = currentTime;
-    }                                          
-  } 
+    }
+  }
   else if (yawTimer != 0)
   {
     // yawPin is no longer receiving signal, but the timer is still running.
@@ -122,7 +122,7 @@ void sendToDrone()
 
   writeBuffer[6] = yaw >> 8;
   writeBuffer[7] = yaw;
-    
+
   radio.write(&writeBuffer, sizeof(writeBuffer));
 }
 
@@ -141,6 +141,3 @@ void printPWM(String pinLabel, int val)
   Serial.print(pinLabel);
   Serial.println(val);
 }
-
-
-

@@ -9,8 +9,8 @@
 // Gyroscope
 int timer = 0;
 int displayCount = 0;
-int gyro_x, gyro_y, gyro_z; // MPU reading in degress/second.
-double gyroRot_x, gyroRot_y, gyroRot_z; // Calibrating reading.
+int gyro_x, gyro_y, gyro_z;                      // MPU reading in degress/second.
+double gyroRot_x, gyroRot_y, gyroRot_z;          // Calibrating reading.
 double gyroOffset_x, gyroOffset_y, gyroOffset_z; // Calibration offsets.
 
 // Accelerometer
@@ -39,8 +39,8 @@ int throttle = 1100, roll, pitch, yaw, aux1, aux2; // Transmitted inputs.
 // Tunable PID gain.
 const double PID_gain = 2.0;
 const double P_gain = 0.075; // Change in steps of 0.05
-const double I_gain = 0.0; // Change in steps of 0.01
-const double D_gain = 0.8; // Change in steps of 0.05
+const double I_gain = 0.0;   // Change in steps of 0.01
+const double D_gain = 0.8;   // Change in steps of 0.05
 double I_roll, I_pitch, I_yaw;
 
 // PID
@@ -51,7 +51,7 @@ double xGoal = 0.0, yGoal = 0.0, zGoal = 0.0;
 int printTimer = 0;
 int debugTimer = 0;
 
-void setup() 
+void setup()
 {
   Serial.begin(9600);
   radio.begin();
@@ -71,7 +71,7 @@ void setup()
   frontRightMotor.writeMicroseconds(1000);
   backLeftMotor.writeMicroseconds(1000);
   backRightMotor.writeMicroseconds(1000);
-  
+
   setupMPU();
   calibrateGyro();
   calibrateMPU();
@@ -81,11 +81,11 @@ void setup()
   digitalWrite(backLights, HIGH);
 
   updateMotorPower();
-  
+
   timer = millis();
 }
 
-void loop() 
+void loop()
 {
   updateOrientation();
   updateGoalandThrottle();
@@ -93,10 +93,10 @@ void loop()
   powerLoCut();
   powerHiCut();
   updateMotorPower();
-  
+
   /*
   if (printTimer == 100)
-  {  
+  {
       printPowerToSerial();
       //printAxis(xDeg, yDeg, zDeg);
       //printControls();
@@ -185,7 +185,7 @@ void powerHiCut()
   {
     backLeftMPow = maxPower;
   }
-  
+
   if (backRightMPow > maxPower)
   {
     backRightMPow = maxPower;
@@ -206,7 +206,7 @@ void updateGoalandThrottle()
   {
     radio.read(&radioBuffer, sizeof(radioBuffer));
 
-    throttle = radioBuffer[0] << 8 | radioBuffer[1]; 
+    throttle = radioBuffer[0] << 8 | radioBuffer[1];
     pitch = radioBuffer[2] << 8 | radioBuffer[3];
     roll = radioBuffer[4] << 8 | radioBuffer[5];
     yaw = radioBuffer[6] << 8 | radioBuffer[7];
@@ -218,7 +218,7 @@ void updateGoalandThrottle()
   }
   else
   {
-    //Serial.println("NO SIGNAL");
+    // Serial.println("NO SIGNAL");
   }
 }
 
@@ -229,15 +229,15 @@ double mapDouble(double val, double fromMin, double fromMax, double toMin, doubl
   return (val - fromMin) / fromRange * toRange + toMin;
 }
 
-//Reads data from MPU and refreshes the orientation data. Uses complementary filter.
+// Reads data from MPU and refreshes the orientation data. Uses complementary filter.
 void updateOrientation()
 {
   readMPU();
   calculateAccel();
   calculateGyro();
 
-  int changeInMillis = millis() - timer; //Calculate time elapsed
-  timer = millis();                      //Reset timer for the following reading
+  int changeInMillis = millis() - timer; // Calculate time elapsed
+  timer = millis();                      // Reset timer for the following reading
 
   double gyroDeg_x = xDeg + (gyroRot_x * changeInMillis / 1000);
   double gyroDeg_y = yDeg + (gyroRot_y * changeInMillis / 1000);
@@ -253,35 +253,34 @@ void updateOrientation()
 
 void readMPU()
 {
-  Wire.beginTransmission(0x68); //Address of the MPU
-  Wire.write(0x3B);             //Address of the first accerometer measurement byte
-  Wire.requestFrom(0x68, 14);   //Request the 6 bytes of acceleromter readings
+  Wire.beginTransmission(0x68); // Address of the MPU
+  Wire.write(0x3B);             // Address of the first accerometer measurement byte
+  Wire.requestFrom(0x68, 14);   // Request the 6 bytes of acceleromter readings
   Wire.endTransmission();
 
-
   // All data is in little-endian order.
-  int byte1 = Wire.read(); //accel x-axis
+  int byte1 = Wire.read(); // accel x-axis
   int byte2 = Wire.read();
-  int byte3 = Wire.read(); //accel y-axis
+  int byte3 = Wire.read(); // accel y-axis
   int byte4 = Wire.read();
-  int byte5 = Wire.read(); //accel z-axis
+  int byte5 = Wire.read(); // accel z-axis
   int byte6 = Wire.read();
 
   Wire.read(); // Tempurature, not relevant.
   Wire.read();
 
-  int byte9 = Wire.read(); //gyro x-axis
+  int byte9 = Wire.read(); // gyro x-axis
   int byte10 = Wire.read();
-  int byte11 = Wire.read(); //gyro y-axis
+  int byte11 = Wire.read(); // gyro y-axis
   int byte12 = Wire.read();
-  int byte13 = Wire.read(); //gyro z-axis
+  int byte13 = Wire.read(); // gyro z-axis
   int byte14 = Wire.read();
 
   accel_x = (byte1 << 8) | byte2;
   accel_y = (byte3 << 8) | byte4;
   accel_z = (byte5 << 8) | byte6;
 
-  gyro_x = (byte9 << 8) | byte10; 
+  gyro_x = (byte9 << 8) | byte10;
   gyro_y = (byte11 << 8) | byte12;
   gyro_z = (byte13 << 8) | byte14;
 }
@@ -291,9 +290,9 @@ void calculateAccel()
   gForce_x = (accel_x / 4096.0);
   gForce_y = (accel_y / 4096.0);
   gForce_z = (accel_z / 4096.0);
-  
+
   accelAngle_x = (180 * atan(gForce_y / gForce_z) / 3.1415) - accelOffset_x;
-  //Negative added for agreement between acceleromter and gyro angle measurements
+  // Negative added for agreement between acceleromter and gyro angle measurements
   accelAngle_y = -1 * ((180 * atan(gForce_x / gForce_z) / 3.1415) - accelOffset_y);
 }
 
@@ -301,7 +300,7 @@ void calculateGyro()
 {
   gyroRot_x = (gyro_x / 32.8) - gyroOffset_x;
   gyroRot_y = (gyro_y / 32.8) - gyroOffset_y;
-  gyroRot_z = (gyro_z / 32.8) - gyroOffset_z; 
+  gyroRot_z = (gyro_z / 32.8) - gyroOffset_z;
 }
 
 void calibrateGyro()
@@ -322,23 +321,23 @@ void calibrateGyro()
     }
   }
 
-  //Record average reading as the calibration value
+  // Record average reading as the calibration value
   gyroOffset_x = totalx / 1000;
   gyroOffset_y = totaly / 1000;
   gyroOffset_z = totalz / 1000;
-} 
+}
 
 void calibrateMPU()
 {
   double angleTotalX = 0.0;
   double angleTotalY = 0.0;
-  
+
   for (int i = 0; i < 1000; i++)
   {
-      readMPU();
-      calculateAccel();
-      angleTotalX += accelAngle_x;
-      angleTotalY += accelAngle_y;
+    readMPU();
+    calculateAccel();
+    angleTotalX += accelAngle_x;
+    angleTotalY += accelAngle_y;
   }
 
   xDeg = angleTotalX / 1000;
@@ -348,7 +347,7 @@ void calibrateMPU()
 
 void setupMPU()
 {
-  //Turn off sleep mode.
+  // Turn off sleep mode.
   Wire.beginTransmission(0x68); // Address of the MPU 6050. Write bit automatically added.
   Wire.write(0x6b);             // Address of the power management byte.
   Wire.write(0b00001000);       // Turn off sleep mode and set the clock source to the internal 8mz clock
@@ -356,14 +355,14 @@ void setupMPU()
 
   // Gyroscope
   Wire.beginTransmission(0x68);
-  Wire.write(0x1b);             // Address of the gyroscope configuration byte
-  Wire.write(0b00010000);       // Sets the full-scale range of the gyroscope to +-500 degrees/second
+  Wire.write(0x1b);       // Address of the gyroscope configuration byte
+  Wire.write(0b00010000); // Sets the full-scale range of the gyroscope to +-500 degrees/second
   Wire.endTransmission();
 
   // Accelerometer
   Wire.beginTransmission(0x68);
-  Wire.write(0x1C);             // Address for acceleromter configuration.
-  Wire.write(0b00010000);       // Set full scale range to +-8g
+  Wire.write(0x1C);       // Address for acceleromter configuration.
+  Wire.write(0b00010000); // Set full scale range to +-8g
   Wire.endTransmission();
 }
 
@@ -426,4 +425,3 @@ void printPWM(String pinLabel, int val)
   Serial.print(pinLabel);
   Serial.println(val);
 }
-
